@@ -1,0 +1,6 @@
+{
+  "name": "Note Bank",
+  "description": "Kategorize edilmiş notlar, sesli kayıtlar, istemci taraflı şifreleme ve bulut senkronizasyonu sunan güvenli not kasası uygulaması.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

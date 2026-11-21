@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: deny all access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isValidVaultConfig(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.pinEnabled is bool &&
+             data.pinSalt is string && data.pinSalt.size() <= 64 &&
+             data.pinHash is string && data.pinHash.size() <= 128 &&
+             (!('wrappedVaultKey' in data) || (data.wrappedVaultKey is string && data.wrappedVaultKey.size() <= 256)) &&
+             (!('wrappedVaultKeyIv' in data) || (data.wrappedVaultKeyIv is string && data.wrappedVaultKeyIv.size() <= 64)) &&
+             data.lockOnLaunch is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidCategory(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 40 &&
+             data.colorHex is string && data.colorHex.size() >= 4 && data.colorHex.size() <= 9 &&
+             data.iconKey is string && data.iconKey.size() >= 1 && data.iconKey.size() <= 32 &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 1000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidNote(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.categoryId is string && data.categoryId.size() >= 1 && data.categoryId.size() <= 128 &&
+             data.encryptedTitle is string && data.encryptedTitle.size() >= 1 && data.encryptedTitle.size() <= 2000 &&
+             data.titleIv is string && data.titleIv.size() >= 8 && data.titleIv.size() <= 64 &&
+             data.encryptedBody is string && data.encryptedBody.size() <= 100000 &&
+             data.bodyIv is string && data.bodyIv.size() <= 64 &&
+             (!('encryptedAudio' in data) || (data.encryptedAudio is string && data.encryptedAudio.size() <= 750000)) &&
+             (!('audioIv' in data) || (data.audioIv is string && data.audioIv.size() <= 64)) &&
+             data.audioDurationMs is int && data.audioDurationMs >= 0 && data.audioDurationMs <= 180000 &&
+             data.hasAudio is bool &&
+             data.locked is bool &&
+             data.pinned is bool &&
+             data.encryptionVersion is int && data.encryptionVersion >= 1 && data.encryptionVersion <= 10 &&
+             data.tags is list && data.tags.size() <= 10 && (data.tags.size() == 0 || data.tags[0] is string) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    match /users/{userId} {
+      allow get, list, create, update, delete: if false;
+
+      match /vaultConfig/{configId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(configId) &&
+                         configId == 'settings' &&
+                         incoming().keys().hasAll(['userId', 'pinEnabled', 'pinSalt', 'pinHash', 'lockOnLaunch', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'pinEnabled', 'pinSalt', 'pinHash', 'wrappedVaultKey', 'wrappedVaultKeyIv', 'lockOnLaunch', 'createdAt', 'updatedAt']) &&
+                         isValidVaultConfig(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(configId) &&
+                         configId == 'settings' &&
+                         isValidVaultConfig(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['pinEnabled', 'pinSalt', 'pinHash', 'wrappedVaultKey', 'wrappedVaultKeyIv', 'lockOnLaunch', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(configId);
+      }
+
+      match /categories/{categoryId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(categoryId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'colorHex', 'iconKey', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'colorHex', 'iconKey', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                         isValidCategory(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(categoryId) &&
+                         isValidCategory(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'colorHex', 'iconKey', 'sortOrder', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(categoryId);
+      }
+
+      match /notes/{noteId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(noteId) &&
+                         incoming().keys().hasAll(['userId', 'categoryId', 'encryptedTitle', 'titleIv', 'encryptedBody', 'bodyIv', 'audioDurationMs', 'hasAudio', 'locked', 'pinned', 'encryptionVersion', 'tags', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'categoryId', 'encryptedTitle', 'titleIv', 'encryptedBody', 'bodyIv', 'encryptedAudio', 'audioIv', 'audioDurationMs', 'hasAudio', 'locked', 'pinned', 'encryptionVersion', 'tags', 'createdAt', 'updatedAt']) &&
+                         isValidNote(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(noteId) &&
+                         isValidNote(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'categoryId', 'encryptedTitle', 'titleIv', 'encryptedBody', 'bodyIv',
+                           'encryptedAudio', 'audioIv', 'audioDurationMs', 'hasAudio',
+                           'locked', 'pinned', 'encryptionVersion', 'tags', 'updatedAt'
+                         ]);
+        allow delete: if isOwner(userId) && isValidId(noteId);
+      }
+    }
+  }
+}

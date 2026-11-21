@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Note Bank</string>
+    <string name="tagline_vault">Şifreli Not &amp; Ses Kasası</string>
+    <string name="sign_in_with_google">Google ile Giriş Yap</string>
+    <string name="auth_subtitle">Notlarınız ve sesli kayıtlarınız cihazda AES-256-GCM ile şifrelenir, bulutta yalnızca size özel anahtarla güvenle senkronize edilir.</string>
+    <string name="feature_encryption_title">AES-256-GCM Şifreleme</string>
+    <string name="feature_encryption_desc">Başlık, içerik ve ses kayıtları buluta çıkmadan önce şifrelenir.</string>
+    <string name="feature_voice_title">Şifreli Sesli Notlar</string>
+    <string name="feature_voice_desc">Canlı dalga formu ile anında sesli kayıt alın ve kasanızda saklayın.</string>
+    <string name="feature_sync_title">Gerçek Zamanlı Bulut Senkronu</string>
+    <string name="feature_sync_desc">Google hesabınızla her cihazda anlık ve çevrimdışı destekli senkronizasyon.</string>
+    <string name="search_notes_hint">Şifreli notlarda veya etiketlerde ara…</string>
+    <string name="all_categories">Tümü</string>
+    <string name="new_note">Yeni Not</string>
+    <string name="new_voice_note">Sesli Not</string>
+    <string name="empty_vault_title">Kasanız henüz boş</string>
+    <string name="empty_vault_subtitle">İlk şifreli notunuzu oluşturun veya sesli kayıt ekleyerek fikirlerinizi güvence altına alın.</string>
+    <string name="sync_status_synced">Bulut Senkronize</string>
+    <string name="sync_status_syncing">Senkronize Ediliyor</string>
+    <string name="sync_status_offline">Çevrimdışı Önbellek</string>
+    <string name="vault_locked_title">Kasa Kilitli</string>
+    <string name="vault_locked_subtitle">Şifreli notlarınızı ve ses kayıtlarınızı çözmek için 4 haneli Kasa PIN\'inizi girin.</string>
+    <string name="mic_permission_rationale">Sesli not kaydedebilmek için mikrofon iznine ihtiyaç vardır.</string>
+</resources>

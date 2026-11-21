@@ -1,0 +1,191 @@
+{
+  "entities": {
+    "VaultConfig": {
+      "title": "VaultConfig",
+      "description": "User encryption vault settings and PIN verification metadata.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "pinEnabled": {
+          "type": "boolean",
+          "description": "Whether the 4-digit Vault PIN lock is enabled."
+        },
+        "pinSalt": {
+          "type": "string",
+          "description": "Base64-encoded PBKDF2 salt for PIN verification and key wrapping."
+        },
+        "pinHash": {
+          "type": "string",
+          "description": "Base64-encoded PBKDF2-HMAC-SHA256 hash of the Vault PIN."
+        },
+        "wrappedVaultKey": {
+          "type": "string",
+          "description": "Optional AES-GCM wrapped vault master key for cross-device decryption."
+        },
+        "wrappedVaultKeyIv": {
+          "type": "string",
+          "description": "Optional Base64 IV for wrappedVaultKey."
+        },
+        "lockOnLaunch": {
+          "type": "boolean",
+          "description": "Whether the vault locks automatically on app launch."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "pinEnabled", "pinSalt", "pinHash", "lockOnLaunch", "createdAt", "updatedAt"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "User-defined or starter category for organizing notes.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "Category display name."
+        },
+        "colorHex": {
+          "type": "string",
+          "description": "Accent hex color string."
+        },
+        "iconKey": {
+          "type": "string",
+          "description": "Icon identifier key."
+        },
+        "sortOrder": {
+          "type": "integer",
+          "description": "Sort order index."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "name", "colorHex", "iconKey", "sortOrder", "createdAt", "updatedAt"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "Client-side AES-256-GCM encrypted note with optional encrypted voice recording.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Category identifier."
+        },
+        "encryptedTitle": {
+          "type": "string",
+          "description": "Base64 AES-256-GCM ciphertext of the note title."
+        },
+        "titleIv": {
+          "type": "string",
+          "description": "Base64 12-byte GCM IV for encryptedTitle."
+        },
+        "encryptedBody": {
+          "type": "string",
+          "description": "Base64 AES-256-GCM ciphertext of the note body."
+        },
+        "bodyIv": {
+          "type": "string",
+          "description": "Base64 12-byte GCM IV for encryptedBody."
+        },
+        "encryptedAudio": {
+          "type": "string",
+          "description": "Optional Base64 AES-256-GCM ciphertext of M4A voice recording."
+        },
+        "audioIv": {
+          "type": "string",
+          "description": "Optional Base64 12-byte GCM IV for encryptedAudio."
+        },
+        "audioDurationMs": {
+          "type": "integer",
+          "description": "Voice recording duration in milliseconds."
+        },
+        "hasAudio": {
+          "type": "boolean",
+          "description": "Whether the note includes an encrypted voice memo."
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Whether the note is marked as Vault-Locked (masked in list)."
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Whether the note is pinned to the top."
+        },
+        "encryptionVersion": {
+          "type": "integer",
+          "description": "Encryption scheme version."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Up to 10 short note tags."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "categoryId",
+        "encryptedTitle",
+        "titleIv",
+        "encryptedBody",
+        "bodyIv",
+        "audioDurationMs",
+        "hasAudio",
+        "locked",
+        "pinned",
+        "encryptionVersion",
+        "tags",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/vaultConfig/{configId}": {
+      "schema": { "$ref": "#/entities/VaultConfig" },
+      "description": "Per-user vault PIN and key wrapping configuration."
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Per-user note categories."
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/Note" },
+      "description": "Per-user encrypted notes and voice recordings."
+    }
+  }
+}
