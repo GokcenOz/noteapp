@@ -45,16 +45,19 @@ jobs:
         run: |
           if [ ! -f debug.keystore ]; then
             if [ -n "$DEBUG_KEYSTORE_BASE64" ]; then
-              printf '%s' "$DEBUG_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > debug.keystore
+              printf '%s' "$DEBUG_KEYSTORE_BASE64" | tr -cd 'A-Za-z0-9+/=' | base64 -d > debug.keystore || rm -f debug.keystore
             elif [ -f debug.keystore.base64 ]; then
-              base64 -d debug.keystore.base64 > debug.keystore
-            else
-              echo "::warning::debug.keystore.base64 bulunamadı; geçici imza anahtarı oluşturuluyor. Google ile Giriş için DEBUG_KEYSTORE_BASE64 secret'ını eklemeniz önerilir."
+              tr -cd 'A-Za-z0-9+/=' < debug.keystore.base64 | base64 -d > debug.keystore || rm -f debug.keystore
+            fi
+            if [ ! -s debug.keystore ] || ! keytool -list -keystore debug.keystore -storepass android >/dev/null 2>&1; then
+              rm -f debug.keystore
+              echo "::warning::Geçerli DEBUG_KEYSTORE_BASE64 okunamadı; geçici imza anahtarı oluşturuluyor."
               keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey \
                 -storepass android -keypass android -keyalg RSA -keysize 2048 \
                 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
             fi
           fi
+          keytool -list -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android | grep -E "SHA1:|SHA256:" || true
 
       - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
